@@ -2,13 +2,15 @@
 /**
  * Mainプロセス
  * 責務:
- *  - BrowserWindow生成（セキュリティ設定: contextIsolation, sandbox 等）
- *  - メニュー構築（Rendererへ安全な通知送出）
- *  - 必要最低限のIPCハンドラ登録（今回は空画面起動が目的のため最小）
+ *  - BrowserWindow生成（セキュリティ設定）
+ *  - メニュー構築（Rendererへ通知）
+ *  - IPCハンドラ: CSV読み込み（ダイアログ→解析→DTO返却）
  */
-const { app, BrowserWindow, Menu } = require('electron');
+const { app, BrowserWindow, Menu, ipcMain, dialog } = require('electron');
 const path = require('path');
+const fs = require('fs');
 const { IPC } = require('../shared/ipc');
+const { parseCsvToBandsDTO } = require('../application/projectService');
 
 let mainWindow;
 
@@ -22,6 +24,7 @@ function buildMenu(win) {
         { label: 'Open…', accelerator: 'CmdOrCtrl+O', click: () => win.webContents.send(IPC.MENU_LOAD) },
         { label: 'Save…', accelerator: 'CmdOrCtrl+S', click: () => win.webContents.send(IPC.MENU_SAVE) },
         { type: 'separator' },
+        { label: 'Import CSV…', accelerator: 'CmdOrCtrl+I', click: () => win.webContents.send(IPC.MENU_IMPORT_CSV) },
         { label: 'Export…', accelerator: 'CmdOrCtrl+E', click: () => win.webContents.send(IPC.MENU_EXPORT) },
         { type: 'separator' },
         { role: 'quit' }
@@ -45,31 +48,41 @@ function buildMenu(win) {
 
 /** BrowserWindow を作成 */
 function createWindow() {
-  mainWindow = new BrowserWindow({
+  const win = new BrowserWindow({
     width: 1100,
     height: 720,
-    title: 'Live Timetable (Minimal)',
+    title: 'Live Timetable',
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.js'),
-      contextIsolation: true,   // Renderer と分離
-      nodeIntegration: false,   // window.require 不可
-      sandbox: true,            // 追加の分離
-      enableRemoteModule: false // 明示的に無効
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true,
+      enableRemoteModule: false
     }
   });
-
-  mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
-  mainWindow.once('ready-to-show', () => mainWindow.show());
-
-  // メニュー
-  buildMenu(mainWindow);
+  win.loadFile(path.join(__dirname, '../renderer/index.html'));
+  win.once('ready-to-show', () => win.show());
+  buildMenu(win);
+  mainWindow = win;
 }
 
-// アプリライフサイクル
+// ===== IPC: CSV 読み込み（ダイアログ） =====
+ipcMain.handle(IPC.CSV_IMPORT_DIALOG, async () => {
+  const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
+    properties: ['openFile'],
+    filters: [{ name: 'CSV', extensions: ['csv'] }]
+  });
+  if (canceled || filePaths.length === 0) return { ok: false, error: 'canceled' };
+  try {
+    const raw = fs.readFileSync(filePaths[0], 'utf-8');
+    const result = parseCsvToBandsDTO(raw);
+    return { ok: true, path: filePaths[0], ...result };
+  } catch (e) {
+    return { ok: false, error: e?.message || String(e) };
+  }
+});
+
+// ===== アプリライフサイクル =====
 app.whenReady().then(createWindow);
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit();
-});
-app.on('activate', () => {
-  if (BrowserWindow.getAllWindows().length === 0) createWindow();
-});
+app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
+app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });

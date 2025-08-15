@@ -2,8 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="utf-8">
-  <title>Live Timetable (Minimal)</title>
-  <!-- 厳しめのCSP（開発の便宜上、style のみ inline 許可） -->
+  <title>Live Timetable (Domain+CSV)</title>
   <meta http-equiv="Content-Security-Policy"
         content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self';">
   <meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -11,12 +10,12 @@
 </head>
 <body>
   <header class="app-header">
-    <h1>ライブのタイムテーブル（最小サンプル）</h1>
-    <p class="sub">メニューから <kbd>New</kbd> / <kbd>Open</kbd> / <kbd>Save</kbd> / <kbd>Export</kbd> を押すとコンソールにイベントが表示されます。</p>
+    <h1>ライブのタイムテーブル（ドメイン/CSV検証用）</h1>
+    <p class="sub">DevTools で <code>electronAPI.importCsvViaDialog()</code> を実行すると、解析結果(JSON)が返ります。</p>
   </header>
 
   <main class="app-main" id="app">
-    <div class="empty">ここにUIを実装していきます。</div>
+    <div class="empty">UI未結線。メニュー「File &gt; Import CSV…」でも同様に呼び出せます。</div>
   </main>
 
   <footer class="app-footer">

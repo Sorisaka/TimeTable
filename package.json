@@ -1,13 +1,17 @@
 {
-  "name": "live-timetable-min",
-  "version": "0.1.0",
-  "description": "Electron 最小構成（起動して空画面を表示）",
+  "name": "live-timetable-domain-csv",
+  "version": "0.2.0",
+  "description": "ライブのタイムテーブル作成アプリ（ドメインモデル + CSV読み込み/IPC返却まで）",
   "main": "src/main/main.js",
   "type": "commonjs",
   "private": true,
   "scripts": {
     "start": "electron .",
+    "test": "node tests/run-csv-parser.test.js",
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\""
+  },
+  "dependencies": {
+    "papaparse": "^5.4.1"
   },
   "devDependencies": {
     "electron": "^31.3.0"
