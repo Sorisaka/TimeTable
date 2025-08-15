@@ -1,0 +1,18 @@
+{
+  "name": "live-timetable-min",
+  "version": "0.1.0",
+  "description": "Electron 最小構成（起動して空画面を表示）",
+  "main": "src/main/main.js",
+  "type": "commonjs",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\""
+  },
+  "devDependencies": {
+    "electron": "^31.3.0"
+  },
+  "engines": {
+    "node": ">=18.0.0 <23"
+  }
+}
