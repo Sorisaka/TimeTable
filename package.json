@@ -1,17 +1,13 @@
 {
-  "name": "live-timetable-domain-csv",
-  "version": "0.2.0",
-  "description": "ライブのタイムテーブル作成アプリ（ドメインモデル + CSV読み込み/IPC返却まで）",
+  "name": "live-timetable-ui-skeleton",
+  "version": "0.3.0",
+  "description": "ライブのタイムテーブル作成アプリ — UIスケルトン & 新規作成/読み込み/保存/書き出しモーダル（IPC結線）",
   "main": "src/main/main.js",
   "type": "commonjs",
   "private": true,
   "scripts": {
     "start": "electron .",
-    "test": "node tests/run-csv-parser.test.js",
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\""
-  },
-  "dependencies": {
-    "papaparse": "^5.5.3"
   },
   "devDependencies": {
     "electron": "^31.3.0"

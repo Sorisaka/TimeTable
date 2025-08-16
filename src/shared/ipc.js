@@ -1,20 +1,28 @@
 'use strict';
 /**
- * IPC 契約定義（Contract）
- * - 方向:
- *   - send: Main -> Renderer
- *   - invoke: Renderer -> Main
+ * IPC 契約定義（Contract集中）
+ * セキュリティ方針: ここに定義されたチャンネルのみ使用する。
  */
 const IPC = {
-  // Menu notifications (send)
+  // Menu notifications (Main -> Renderer)
   MENU_NEW: 'menu:new',
   MENU_LOAD: 'menu:load',
   MENU_SAVE: 'menu:save',
   MENU_EXPORT: 'menu:export',
-  MENU_IMPORT_CSV: 'menu:importCsv',
 
-  // Import/Parse
-  CSV_IMPORT_DIALOG: 'csv:importDialog' // invoke -> { ok, path?, days, bandsDTO, errors? }
+  // Project lifecycle (Renderer -> Main)
+  PROJECT_CREATE: 'project:create',    // payload: WizardInput -> { ok, project }
+  PROJECT_OPEN: 'project:open',        // -> { ok, path?, data? }
+  PROJECT_SAVE: 'project:save',        // data -> { ok, path? }
+
+  // Export (Renderer -> Main)
+  EXPORT_IMAGE: 'export:image'         // { rect } -> { ok, path? }
 };
 
-module.exports = { IPC };
+// 補助バリデーション（例: キャプチャ矩形）
+function isRect(obj) {
+  return obj && Number.isFinite(obj.x) && Number.isFinite(obj.y)
+    && Number.isFinite(obj.width) && Number.isFinite(obj.height);
+}
+
+module.exports = { IPC, isRect };
