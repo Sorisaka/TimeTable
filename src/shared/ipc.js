@@ -1,7 +1,8 @@
 'use strict';
 /**
  * IPC 契約定義（Contract集中）
- * セキュリティ方針: ここに定義されたチャンネルのみ使用する。
+ * - ここに定義されたチャンネルのみ使用する。
+ * - preload / main / renderer すべてから参照されるため、**必ずこのファイルを配置**。
  */
 const IPC = {
   // Menu notifications (Main -> Renderer)
@@ -19,7 +20,7 @@ const IPC = {
   EXPORT_IMAGE: 'export:image'         // { rect } -> { ok, path? }
 };
 
-// 補助バリデーション（例: キャプチャ矩形）
+// capturePage用の矩形検証
 function isRect(obj) {
   return obj && Number.isFinite(obj.x) && Number.isFinite(obj.y)
     && Number.isFinite(obj.width) && Number.isFinite(obj.height);

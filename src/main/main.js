@@ -1,24 +1,19 @@
 'use strict';
 /**
  * Mainプロセス
- * 責務:
- *  - BrowserWindow生成（セキュア設定）
- *  - ネイティブメニュー構築（Rendererへ通知）
- *  - IPCハンドラ（project:create/open/save, export:image）
+ * - BrowserWindow生成（セキュア設定）
+ * - メニュー構築（Rendererへ通知）
+ * - IPCハンドラ（project:create/open/save, export:image）
  */
 const { app, BrowserWindow, Menu, ipcMain, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { IPC, isRect } = require('../shared/ipc');
 
-// ---- Application層（ユースケース） -----------------------------------------
-/**
- * Wizard入力からProjectを生成（副作用なし）
- * input: { title, dayInputs:[{label,date,venue,intermissionCount,intermissionMin,defaultDurationMin,extra...}] }
- */
+// ---- Application層（簡易ユースケース） -------------------------------------
 function createProjectFromWizard(input) {
   const now = new Date().toISOString();
-  const days = (input.dayInputs || []).map(d => {
+  const days = (input?.dayInputs || []).map(d => {
     const count = Number.isFinite(d.intermissionCount) ? d.intermissionCount : 0;
     const len = Number.isFinite(d.intermissionMin) ? d.intermissionMin : 45;
     return {
@@ -39,14 +34,12 @@ function createProjectFromWizard(input) {
     };
   });
 
-  /** @type {import('../domain/models').Project} */
-  const project = {
-    meta: { title: input.title || 'Untitled', createdAt: now },
+  return {
+    meta: { title: input?.title || 'Untitled', createdAt: now },
     days,
     bands: [],
     timetable: []
   };
-  return project;
 }
 // ----------------------------------------------------------------------------
 
@@ -86,19 +79,23 @@ function buildMenu(win) {
 
 /** BrowserWindow を作成 */
 function createWindow() {
+  const preloadPath = path.join(__dirname, '..', 'preload', 'index.js'); // 正規化（Windowsでも安全）
+  const htmlPath = path.join(__dirname, '..', 'renderer', 'index.html');
+
   const win = new BrowserWindow({
     width: 1280,
     height: 800,
     title: 'ライブのタイムテーブル',
     webPreferences: {
-      preload: path.join(__dirname, '../preload/index.js'),
+      preload: preloadPath,
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
       enableRemoteModule: false
     }
   });
-  win.loadFile(path.join(__dirname, '../renderer/index.html'));
+
+  win.loadFile(htmlPath);
   win.once('ready-to-show', () => win.show());
   buildMenu(win);
   mainWindow = win;
@@ -136,7 +133,7 @@ ipcMain.handle(IPC.PROJECT_SAVE, async (_evt, data) => {
   });
   if (canceled || !filePath) return { ok: false, error: 'canceled' };
   try {
-    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
+    fs.writeFileSync(filePath, JSON.stringify(data ?? {}, null, 2), 'utf-8');
     return { ok: true, path: filePath };
   } catch (e) {
     return { ok: false, error: e?.message || String(e) };
@@ -150,8 +147,6 @@ ipcMain.handle(IPC.EXPORT_IMAGE, async (_evt, { rect }) => {
     filters: [{ name: 'PNG', extensions: ['png'] }]
   });
   if (canceled || !filePath) return { ok: false, error: 'canceled' };
-
-  // 理由: DOM→画像化ライブラリよりも実描画結果と一致（フォント/レイアウト差異が少ない）
   const image = await mainWindow.webContents.capturePage(rect);
   fs.writeFileSync(filePath, image.toPNG());
   return { ok: true, path: filePath };

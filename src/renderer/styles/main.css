@@ -11,6 +11,7 @@ a{color:var(--accent);text-decoration:none}
 .app-header,.app-footer{background:var(--panel);border-bottom:1px solid var(--border);padding:12px 16px}
 .app-footer{border-top:1px solid var(--border);border-bottom:none;text-align:center}
 .toolbar .hint{color:var(--muted);font-size:12px}
+.toolbar .hint.right{margin-left:auto}
 
 .layout{display:grid;grid-template-rows:auto 1fr;gap:12px;height:calc(100vh - 100px);padding:12px 16px}
 .bands{display:grid;grid-template-columns:1fr 1fr;gap:12px}

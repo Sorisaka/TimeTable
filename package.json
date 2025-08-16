@@ -1,7 +1,7 @@
 {
   "name": "live-timetable-ui-skeleton",
-  "version": "0.3.0",
-  "description": "ライブのタイムテーブル作成アプリ — UIスケルトン & 新規作成/読み込み/保存/書き出しモーダル（IPC結線）",
+  "version": "0.3.1",
+  "description": "ライブのタイムテーブル作成アプリ — UIスケルトン & 新規作成/読み込み/保存/書き出しモーダル（IPC結線・動作修正）",
   "main": "src/main/main.js",
   "type": "commonjs",
   "private": true,

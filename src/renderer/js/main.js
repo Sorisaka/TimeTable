@@ -4,15 +4,14 @@
  * - 状態管理（最小）
  * - メニューイベント受信 → モーダル表示
  * - 新規作成ウィザード → IPC: project:create
- * - プロジェクト読み込み/保存/書き出しの結線（ガイドモーダル経由）
+ * - 読み込み/保存/書き出しの結線
+ * - preload未ロード時でも落ちないようガードを追加
  */
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
-const state = {
-  project: null // { meta, days, bands, timetable }
-};
+const state = { project: null };
 
 // ---------- Modal 基盤 ----------
 const $backdrop = $('#modal-backdrop');
@@ -88,13 +87,17 @@ $('#wiz-create').addEventListener('click', async () => {
     };
   });
 
-  const res = await window.electronAPI.projectCreate({ title, dayInputs });
-  if (res?.ok) {
-    state.project = res.project;
-    renderProject();
-    closeModal('modal-new');
+  if (window.electronAPI?.projectCreate) {
+    const res = await window.electronAPI.projectCreate({ title, dayInputs });
+    if (res?.ok) {
+      state.project = res.project;
+      renderProject();
+      closeModal('modal-new');
+    } else {
+      alert(`作成に失敗しました: ${res?.error || 'unknown'}`);
+    }
   } else {
-    alert(`作成に失敗しました: ${res?.error || 'unknown'}`);
+    alert('preload が読み込まれていないため、作成できませんでした。');
   }
 });
 
@@ -117,11 +120,9 @@ function openGenericModal(title, desc, actions = []) {
 // ---------- レイアウト描画 ----------
 function renderProject() {
   const p = state.project;
-  // バンドブロック（スケルトン）
   $('#band-multi').innerHTML = '';
   $('#band-perday').innerHTML = '';
 
-  // タイムテーブル列を作成
   const $table = $('#timetable');
   $table.innerHTML = '';
   if (!p?.days?.length) return;
@@ -152,58 +153,68 @@ async function doExport() {
     width: Math.ceil(area.width * dpr),
     height: Math.ceil(area.height * dpr)
   };
+  if (!window.electronAPI?.exportImage) {
+    alert('preload が読み込まれていないため、書き出しできません。');
+    return;
+  }
   const res = await window.electronAPI.exportImage(rect);
-  if (!res?.ok) alert(`書き出しに失敗: ${res?.error || 'unknown'}`);
+  if (!res?.ok && res?.error !== 'canceled') alert(`書き出しに失敗: ${res?.error || 'unknown'}`);
 }
 
-// ---------- メニューイベントの結線 ----------
-window.electronAPI.onMenu({
-  onNew: () => {
-    // 初期行生成
-    $('#wiz-daycount').value = '4';
-    $('#wiz-generate').click();
-    showModal('modal-new');
-  },
-  onLoad: () => {
-    openGenericModal('プロジェクト読み込み', 'JSON を選択すると読み込みます。', [
-      {
-        label: 'ファイルを選ぶ…',
-        kind: 'primary',
-        onClick: async () => {
-          const res = await window.electronAPI.openProject();
-          if (res?.ok) {
-            state.project = res.data;
-            renderProject();
-            closeModal('modal-generic');
-          } else if (res?.error !== 'canceled') {
-            alert(`読み込みに失敗: ${res?.error || 'unknown'}`);
+// ---------- メニューイベントの結線（preload存在チェック付き） ----------
+const $preloadStatus = $('#preload-status');
+if (window.electronAPI?.onMenu) {
+  $preloadStatus.textContent = 'preload: OK';
+  window.electronAPI.onMenu({
+    onNew: () => {
+      $('#wiz-daycount').value = '4';
+      $('#wiz-generate').click();
+      showModal('modal-new');
+    },
+    onLoad: () => {
+      openGenericModal('プロジェクト読み込み', 'JSON を選択すると読み込みます。', [
+        {
+          label: 'ファイルを選ぶ…',
+          kind: 'primary',
+          onClick: async () => {
+            const res = await window.electronAPI.openProject();
+            if (res?.ok) {
+              state.project = res.data;
+              renderProject();
+              closeModal('modal-generic');
+            } else if (res?.error !== 'canceled') {
+              alert(`読み込みに失敗: ${res?.error || 'unknown'}`);
+            }
           }
         }
-      }
-    ]);
-  },
-  onSave: () => {
-    openGenericModal('プロジェクト保存', '現在のプロジェクトを JSON として保存します。', [
-      {
-        label: '保存する…',
-        kind: 'primary',
-        onClick: async () => {
-          const res = await window.electronAPI.saveProject(state.project || { meta: { title: 'Untitled' } });
-          if (!res?.ok && res?.error !== 'canceled') {
-            alert(`保存に失敗: ${res?.error || 'unknown'}`);
-          } else {
-            closeModal('modal-generic');
+      ]);
+    },
+    onSave: () => {
+      openGenericModal('プロジェクト保存', '現在のプロジェクトを JSON として保存します。', [
+        {
+          label: '保存する…',
+          kind: 'primary',
+          onClick: async () => {
+            const res = await window.electronAPI.saveProject(state.project || { meta: { title: 'Untitled' } });
+            if (!res?.ok && res?.error !== 'canceled') {
+              alert(`保存に失敗: ${res?.error || 'unknown'}`);
+            } else {
+              closeModal('modal-generic');
+            }
           }
         }
-      }
-    ]);
-  },
-  onExport: () => {
-    openGenericModal('画像書き出し', '表示中のテーブル領域を PNG として保存します。', [
-      { label: '書き出す…', kind: 'primary', onClick: async () => { await doExport(); closeModal('modal-generic'); } }
-    ]);
-  }
-});
+      ]);
+    },
+    onExport: () => {
+      openGenericModal('画像書き出し', '表示中のテーブル領域を PNG として保存します。', [
+        { label: '書き出す…', kind: 'primary', onClick: async () => { await doExport(); closeModal('modal-generic'); } }
+      ]);
+    }
+  });
+} else {
+  $preloadStatus.textContent = 'preload: NG（DevToolsでエラーを確認）';
+  console.error('preload が読み込まれていません。src/preload/index.js と src/shared/ipc.js の配置/パスを確認してください。');
+}
 
-// 初期描画（空）
+// 初期描画
 renderProject();
