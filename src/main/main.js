@@ -1,51 +1,45 @@
 'use strict';
 /**
  * Mainプロセス
- * - BrowserWindow生成（セキュア設定）
- * - メニュー構築（Rendererへ通知）
- * - IPCハンドラ（project:create/open/save, export:image）
+ * 責務:
+ *  - BrowserWindow生成（セキュア設定）
+ *  - ネイティブメニュー（Rendererへ通知）
+ *  - IPCハンドラ: project:create/open/save, export:image
  */
 const { app, BrowserWindow, Menu, ipcMain, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { IPC, isRect } = require('../shared/ipc');
 
-// ---- Application層（簡易ユースケース） -------------------------------------
 function createProjectFromWizard(input) {
   const now = new Date().toISOString();
-  const days = (input?.dayInputs || []).map(d => {
+  const days = (input.dayInputs || []).map(d => {
     const count = Number.isFinite(d.intermissionCount) ? d.intermissionCount : 0;
     const len = Number.isFinite(d.intermissionMin) ? d.intermissionMin : 45;
     return {
       label: d.label,
       date: d.date || '',
       venue: d.venue || '',
+      start: d.start || '12:00', // 便宜的に開始時刻を保持（DnDの不可帯表示に利用）
       intermissions: Array.from({ length: count }, () => len),
       defaultDurationMin: Number.isFinite(d.defaultDurationMin) ? d.defaultDurationMin : 15,
       extra: {
         liveName: d.liveName || '',
-        weekday: d.weekday || '',
-        loadIn: d.loadIn || '',
-        rehearsal: d.rehearsal || '',
         open: d.open || '',
-        start: d.start || '',
         clearOut: d.clearOut || ''
       }
     };
   });
-
   return {
-    meta: { title: input?.title || 'Untitled', createdAt: now },
+    meta: { title: input.title || 'Untitled', createdAt: now },
     days,
-    bands: [],
-    timetable: []
+    bands: input.bands || [],    // UIでサンプル追加可
+    timetable: []                // Application層で日毎に slots を生成していく
   };
 }
-// ----------------------------------------------------------------------------
 
 let mainWindow;
 
-/** メニュー構築 */
 function buildMenu(win) {
   const template = [
     {
@@ -66,28 +60,22 @@ function buildMenu(win) {
         { role: 'reload', label: '再読み込み' },
         { role: 'toggleDevTools', label: '開発者ツール' },
         { type: 'separator' },
-        { role: 'resetZoom', label: 'ズーム 100%' },
-        { role: 'zoomIn', label: 'ズームイン' },
-        { role: 'zoomOut', label: 'ズームアウト' },
+        { role: 'resetZoom' }, { role: 'zoomIn' }, { role: 'zoomOut' },
         { type: 'separator' },
-        { role: 'togglefullscreen', label: 'フルスクリーン' }
+        { role: 'togglefullscreen' }
       ]
     }
   ];
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
 }
 
-/** BrowserWindow を作成 */
 function createWindow() {
-  const preloadPath = path.join(__dirname, '..', 'preload', 'index.js'); // 正規化（Windowsでも安全）
-  const htmlPath = path.join(__dirname, '..', 'renderer', 'index.html');
-
   const win = new BrowserWindow({
     width: 1280,
-    height: 800,
+    height: 860,
     title: 'ライブのタイムテーブル',
     webPreferences: {
-      preload: preloadPath,
+      preload: path.join(__dirname, '../preload/index.js'),
       contextIsolation: true,
       nodeIntegration: false,
       // レンダラープロセスの制限を撤去
@@ -96,14 +84,13 @@ function createWindow() {
       enableRemoteModule: false
     }
   });
-
-  win.loadFile(htmlPath);
+  win.loadFile(path.join(__dirname, '../renderer/index.html'));
   win.once('ready-to-show', () => win.show());
   buildMenu(win);
   mainWindow = win;
 }
 
-// ===== IPC ハンドラ =====
+// ===== IPC =====
 ipcMain.handle(IPC.PROJECT_CREATE, async (_evt, payload) => {
   try {
     const project = createProjectFromWizard(payload || {});
@@ -135,7 +122,7 @@ ipcMain.handle(IPC.PROJECT_SAVE, async (_evt, data) => {
   });
   if (canceled || !filePath) return { ok: false, error: 'canceled' };
   try {
-    fs.writeFileSync(filePath, JSON.stringify(data ?? {}, null, 2), 'utf-8');
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
     return { ok: true, path: filePath };
   } catch (e) {
     return { ok: false, error: e?.message || String(e) };
@@ -154,7 +141,6 @@ ipcMain.handle(IPC.EXPORT_IMAGE, async (_evt, { rect }) => {
   return { ok: true, path: filePath };
 });
 
-// ライフサイクル
 app.whenReady().then(createWindow);
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
 app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });

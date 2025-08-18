@@ -11,14 +11,10 @@
 <body>
   <header class="app-header">
     <h1>ライブのタイムテーブル</h1>
-    <div class="toolbar">
-      <span class="hint">上部ネイティブメニュー「ファイル」から操作</span>
-      <span id="preload-status" class="hint right"></span>
-    </div>
+    <div class="toolbar"><span class="hint">上部メニュー「ファイル」から操作</span></div>
   </header>
 
   <main class="layout">
-    <!-- 上段：バンドブロック -->
     <section class="bands">
       <div class="band-group">
         <h2>複数日程に出演可</h2>
@@ -30,20 +26,15 @@
       </div>
     </section>
 
-    <!-- 下段：日程のテーブル（横並び） -->
     <section class="timetable-wrap">
       <div id="timetable" class="timetable"></div>
     </section>
   </main>
 
-  <footer class="app-footer">
-    <small>© 2025 Live Timetable</small>
-  </footer>
+  <footer class="app-footer"><small>© 2025 Live Timetable</small></footer>
 
-  <!-- ===== Modals ===== -->
+  <!-- Modals -->
   <div id="modal-backdrop" class="modal-backdrop hidden" aria-hidden="true"></div>
-
-  <!-- 新規作成モーダル -->
   <div id="modal-new" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modal-new-title">
     <div class="modal-card">
       <header class="modal-header">
@@ -52,19 +43,16 @@
       </header>
       <section class="modal-body">
         <div class="form-row">
-          <label>タイトル</label>
-          <input id="wiz-title" type="text" placeholder="例: 6月ライブ"/>
+          <label>タイトル</label><input id="wiz-title" type="text" placeholder="例: 6月ライブ"/>
         </div>
         <div class="form-row">
           <label>日程数</label>
-          <input id="wiz-daycount" type="number" min="1" max="10" value="4"/>
+          <input id="wiz-daycount" type="number" min="1" max="10" value="2"/>
           <button id="wiz-generate" class="btn">行を生成</button>
         </div>
-
         <div class="grid-head">
-          <span>#</span><span>ライブ名</span><span>日付・曜日</span><span>場所</span>
-          <span>会場入り</span><span>リハ</span><span>オープン</span><span>スタート</span>
-          <span>インターミッション数</span><span>各長さ(分)</span><span>デフォ演奏(分)</span><span>完全撤収</span>
+          <span>#</span><span>ライブ名</span><span>日付</span><span>場所</span>
+          <span>スタート</span><span>IM本数</span><span>各長さ</span><span>デフォ演奏</span><span>完全撤収</span>
         </div>
         <div id="wiz-rows" class="rows scroll-y"></div>
       </section>
@@ -75,7 +63,6 @@
     </div>
   </div>
 
-  <!-- 読み込み/保存/書き出しガイド用の簡易モーダル -->
   <div id="modal-generic" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modal-generic-title">
     <div class="modal-card">
       <header class="modal-header">
@@ -92,6 +79,14 @@
     </div>
   </div>
 
-  <script src="./js/main.js"></script>
+  <!-- Domain/Application (browser globals) -->
+  <script src="../domain/scheduleOps.js"></script>
+  <script src="../application/scheduleService.js"></script>
+
+  <!-- UI components & controller -->
+  <script src="./js/components/ModalManager.js"></script>
+  <script src="./js/components/BandBlock.js"></script>
+  <script src="./js/components/TimetableView.js"></script>
+  <script src="./js/controllers/AppController.js"></script>
 </body>
 </html>
