@@ -4,7 +4,12 @@
  * - ドメイン関数を組み合わせ、UIに返すための派生データ（conflicts, highlights 等）を生成
  * - 副作用なし
  */
-const Ops = require('../domain/scheduleOps');
+
+// ブラウザグローバルオブジェクトとして作成
+window.ScheduleService = (function() {
+
+// ScheduleOpsへの参照（グローバルオブジェクトから取得）
+const Ops = window.ScheduleOps;
 
 /**
  * 行追加
@@ -54,4 +59,7 @@ function sortBandsByAvailability(project) {
   return ids;
 }
 
-module.exports = { addRow, removeRow, place, swap, unavailableSlots, sortBandsByAvailability };
+// パブリックAPIを返す
+return { addRow, removeRow, place, swap, unavailableSlots, sortBandsByAvailability };
+
+})(); // IIFE終了

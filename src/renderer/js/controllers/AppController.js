@@ -6,8 +6,8 @@
  * - コンフリクト結果に応じてバンドブロックやスロットを赤表示
  */
 (function bootstrap() {
-  const Svc = window.module?.exports || window; // (for safety when loaded in browser)
-  const ScheduleService = Svc; // scheduleService exports on window
+  // グローバルオブジェクトから ScheduleService を取得
+  const ScheduleService = window.ScheduleService;
 
   const state = {
     project: null,

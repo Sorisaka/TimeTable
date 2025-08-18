@@ -4,6 +4,9 @@
  * - ここでは外部I/Oを一切行わず、POJOを受け取りPOJOを返す
  */
 
+// ブラウザグローバルオブジェクトとして作成
+window.ScheduleOps = (function() {
+
 /** shallow clone helper */
 const clone = (o) => JSON.parse(JSON.stringify(o));
 
@@ -218,9 +221,12 @@ function availabilityScore(project, bandId) {
   return Object.values(band.availability || {}).reduce((acc, arr) => acc + (arr?.length || 0), 0);
 }
 
-module.exports = {
+// パブリックAPIを返す
+return {
   ensureSchedule,
   addRow, removeRow, placeBand, swap,
   calcStartMins, calcUnavailableSlotsForBand,
   detectConflicts, availabilityScore
 };
+
+})(); // IIFE終了
