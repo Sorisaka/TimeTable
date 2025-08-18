@@ -8,3 +8,7 @@ tests/run-csv-parser.test.jsの単体実行によるテストのために必要(
 
 `npm install papaparse`<br>
 `node tests/run-csv-parser.test.js`<br>
+
+### 修正推奨要素
+1. sandbox有効化<br>
+`require('path')`の使用のために`src/main.main.js`の`createWindow()`にて`sandbox: false`としてあるが、セキュリティのために`true`で動くようにすべき。

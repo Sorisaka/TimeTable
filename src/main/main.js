@@ -90,7 +90,9 @@ function createWindow() {
       preload: preloadPath,
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: true,
+      // レンダラープロセスの制限を撤去
+      // セキュリティ的に良くないが、インターネットに繋がないためfalseに変更
+      sandbox: false,
       enableRemoteModule: false
     }
   });
