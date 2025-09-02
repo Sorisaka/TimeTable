@@ -76,21 +76,22 @@ function removeRow(project, dayLabel, atIndex) {
  * @param {string} dayLabel
  * @param {number} index
  * @param {string} bandId
- * @returns {import('./entities').Project}
+ * @returns {{project: import('./entities').Project, removedBandId?: string}}
  */
 function placeBand(project, dayLabel, index, bandId) {
   const p = ensureSchedule(project);
   const band = p.bands.find(b => b.id === bandId);
   const day = p.days.find(d => d.label === dayLabel);
   const sched = p.timetable.days.find(d => d.label === dayLabel);
-  if (!band || !day || !sched) return p;
-  if (index < 0 || index >= sched.slots.length) return p;
+  if (!band || !day || !sched) return { project: p };
+  if (index < 0 || index >= sched.slots.length) return { project: p };
 
   const target = sched.slots[index];
+  const removed = target.bandId;
   // 入れ替え: 既存バンドがいたら palette に戻った扱い
   target.bandId = band.id;
   target.durationMin = band.durationMin || day.defaultDurationMin;
-  return p;
+  return { project: p, removedBandId: removed };
 }
 
 /**
