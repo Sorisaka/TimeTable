@@ -23,16 +23,16 @@ function addRow(project, dayLabel, atIndex) {
  * 行削除
  */
 function removeRow(project, dayLabel, atIndex) {
-  const { project: p } = Ops.removeRow(project, dayLabel, atIndex);
-  return { project: p, conflicts: Ops.detectConflicts(p) };
+  const { project: p, removedBandId } = Ops.removeRow(project, dayLabel, atIndex);
+  return { project: p, removedBandId, conflicts: Ops.detectConflicts(p) };
 }
 
 /**
  * ドラッグ&ドロップ配置（入れ替えは UI 側で index を指定して呼ぶ）
  */
 function place(project, dayLabel, index, bandId) {
-  const p = Ops.placeBand(project, dayLabel, index, bandId);
-  return { project: p, conflicts: Ops.detectConflicts(p) };
+  const { project: p, removedBandId } = Ops.placeBand(project, dayLabel, index, bandId);
+  return { project: p, removedBandId, conflicts: Ops.detectConflicts(p) };
 }
 
 /**
